@@ -8,6 +8,15 @@ contract ChainList {
     string description;
     uint256 price;
 
+    //Construtcor
+    constructor() {
+        sellArticle(
+            "Default article",
+            "Article set by default",
+            1000000000000000000
+        );
+    }
+
     //Sell an article
     function sellArticle(
         string memory _name,
