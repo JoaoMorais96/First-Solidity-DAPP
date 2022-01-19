@@ -2,16 +2,29 @@
 pragma solidity ^0.8.11;
 
 contract ChainList {
-    //Variables
-    address seller;
-    address buyer;
-    string name;
-    string description;
-    uint256 price;
+    //Custom types
+    struct Article {
+        uint256 id;
+        address seller;
+        address buyer;
+        string name;
+        string description;
+        uint256 price;
+    }
+
+    // State Variables
+    mapping(uint256 => Article) public articles;
+    uint256 articleCounter;
 
     //Events
-    event logSellArticle(address indexed _seller, string _name, uint256 _price);
+    event logSellArticle(
+        uint256 indexed _id,
+        address indexed _seller,
+        string _name,
+        uint256 _price
+    );
     event logBuyArticle(
+        uint256 indexed _id,
         address indexed _seller,
         address indexed _buyer,
         string _name,
@@ -24,49 +37,80 @@ contract ChainList {
         string memory _description,
         uint256 _price
     ) public {
-        seller = msg.sender;
-        name = _name;
-        description = _description;
-        price = _price;
-        emit logSellArticle(msg.sender, name, price);
+        articleCounter++;
+        articles[articleCounter] = Article(
+            articleCounter,
+            msg.sender,
+            address(0x0),
+            _name,
+            _description,
+            _price
+        );
+
+        emit logSellArticle(articleCounter, msg.sender, _name, _price);
     }
 
-    //Get an article
-    function getArticle()
-        public
-        view
-        returns (
-            address _seller,
-            address _buyer,
-            string memory _name,
-            string memory _description,
-            uint256 _price
-        )
-    {
-        return (seller, buyer, name, description, price);
+    // Fetch number of articles
+    function getNumberOfArticles() public view returns (uint256) {
+        return articleCounter;
+    }
+
+    //Fetch and return all article ids for articles still for sale
+    function getArticlesForSale() public view returns (uint256[] memory) {
+        uint256[] memory articleIds = new uint256[](articleCounter);
+
+        uint256 numberOfArticlesForSale = 0;
+        // Itirate over articles
+        for (uint256 i = 0; i <= articleCounter; i++) {
+            //Keep id if article is still for sale
+            if (articles[i].buyer == address(0x0)) {
+                articleIds[numberOfArticlesForSale] = articles[i].id;
+                numberOfArticlesForSale++;
+            }
+        }
+
+        // Copy articleIds array into a smaller forSale array
+        uint256[] memory forSale = new uint256[](numberOfArticlesForSale);
+        for (uint256 j = 0; j < numberOfArticlesForSale; j++) {
+            forSale[j] = articleIds[j];
+        }
+
+        return forSale;
     }
 
     //buy an article
-    function buyArticle() public payable {
+    function buyArticle(uint256 _id) public payable {
         //See if there is an article for sale
-        require(seller != address(0x0));
+        require(articleCounter > 0);
+
+        //We check if article exists
+        require(_id > 0 && _id <= articleCounter);
+
+        //Retrieve article from the mapping
+        Article storage article = articles[_id];
 
         //we check that the article has not been sold
-        require(buyer == address(0x0));
+        require(article.buyer == address(0x0));
 
         //we don't allow the seller to buy his own product
-        require(msg.sender != seller);
+        require(msg.sender != article.seller);
 
         //we check that the value sent corresponds to the price of the article
-        require(msg.value == price);
+        require(msg.value == article.price);
 
         //Keep buyers information
-        buyer = msg.sender;
+        article.buyer = msg.sender;
 
         //The buyer can pay the seller
-        payable(seller).transfer(msg.value);
+        payable(article.seller).transfer(msg.value);
 
         //trigger event
-        emit logBuyArticle(seller, buyer, name, price);
+        emit logBuyArticle(
+            article.id,
+            article.seller,
+            article.buyer,
+            article.name,
+            article.price
+        );
     }
 }
