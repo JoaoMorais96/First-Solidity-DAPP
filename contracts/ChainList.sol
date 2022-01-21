@@ -14,7 +14,7 @@ contract ChainList {
 
     // State Variables
     mapping(uint256 => Article) public articles;
-    uint256 articleCounter;
+    uint256 articleCounter = 0;
 
     //Events
     event logSellArticle(
@@ -56,25 +56,31 @@ contract ChainList {
     }
 
     //Fetch and return all article ids for articles still for sale
+    // fetch and returns all article IDs available for sale
     function getArticlesForSale() public view returns (uint256[] memory) {
+        // we check whether there is at least one article
+        if (articleCounter == 0) {
+            return new uint256[](0);
+        }
+
+        // prepare output arrays
         uint256[] memory articleIds = new uint256[](articleCounter);
 
         uint256 numberOfArticlesForSale = 0;
-        // Itirate over articles
-        for (uint256 i = 0; i <= articleCounter; i++) {
-            //Keep id if article is still for sale
+        // iterate over articles
+        for (uint256 i = 1; i <= articleCounter; i++) {
+            // keep only the ID for the article not already sold
             if (articles[i].buyer == address(0x0)) {
                 articleIds[numberOfArticlesForSale] = articles[i].id;
                 numberOfArticlesForSale++;
             }
         }
 
-        // Copy articleIds array into a smaller forSale array
+        // copy the articleIds array into the smaller forSale array
         uint256[] memory forSale = new uint256[](numberOfArticlesForSale);
         for (uint256 j = 0; j < numberOfArticlesForSale; j++) {
             forSale[j] = articleIds[j];
         }
-
         return forSale;
     }
 
