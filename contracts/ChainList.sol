@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-contract ChainList {
+import "./Ownable.sol";
+
+contract ChainList is Ownable {
     //Custom types
     struct Article {
         uint256 id;
@@ -30,6 +32,16 @@ contract ChainList {
         string _name,
         uint256 _price
     );
+
+    //Constructor
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Deactivates the contract´
+    function kill() public onlyOwner {
+        selfdestruct(payable(owner));
+    }
 
     //Sell an article
     function sellArticle(
